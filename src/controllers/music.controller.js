@@ -56,7 +56,18 @@ async function createAlbum(req, res) {
   });
 }
 
+async function getAllMusics(req, res) {
+  const musics = await musicModel.find().populate("artist", "username email");
+  // Populate Artist will give us all data about Artist aswell which can be displayed to user
+
+  res.status(200).json({
+    message: "Musics fetched successfully",
+    musics: musics,
+  });
+}
+
 module.exports = {
   createMusic,
   createAlbum,
+  getAllMusics,
 };
