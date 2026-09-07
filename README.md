@@ -2,7 +2,31 @@
 
 Backend API for a Spotify-style music streaming application built with **Node.js, Express, MongoDB, Mongoose, JWT authentication, Multer, and ImageKit**.
 
-The API currently supports user/artist authentication, artist-only music and album creation, music uploads, and authenticated music/album retrieval.
+The backend provides user/artist authentication, role-based authorization, music uploads, album creation, and authenticated music/album retrieval.
+
+## Live Deployment
+
+The backend is deployed on **Render**:
+
+**API Base URL:** https://backend-vibeex.onrender.com
+
+### Health Check
+
+A simple test endpoint is available at the root route:
+
+```http
+GET /
+```
+
+Response:
+
+```text
+MusicApp is up and running
+```
+
+You can use it to verify that the deployed backend is online:
+
+https://backend-vibeex.onrender.com/
 
 ---
 
@@ -14,11 +38,12 @@ The API currently supports user/artist authentication, artist-only music and alb
 - **Mongoose** — MongoDB ODM
 - **JWT (JSON Web Token)** — Authentication
 - **bcryptjs** — Password hashing
-- **cookie-parser** — Reads authentication cookies
-- **Multer** — Handles multipart/form-data and in-memory music uploads
+- **cookie-parser** — Authentication cookie handling
+- **Multer** — Multipart/form-data and in-memory file uploads
 - **ImageKit** — Cloud storage for uploaded music files
 - **dotenv** — Environment variable management
 - **Nodemon** — Development server auto-restart
+- **Render** — Backend deployment
 
 ---
 
@@ -31,7 +56,7 @@ The API currently supports user/artist authentication, artist-only music and alb
 - User logout
 - Password hashing with bcrypt
 - JWT-based authentication
-- Authentication stored in an HTTP cookie
+- JWT stored in an HTTP cookie
 - Role-based authorization for `user` and `artist`
 
 ### Music
@@ -49,6 +74,10 @@ The API currently supports user/artist authentication, artist-only music and alb
 - Retrieve all albums
 - Retrieve an individual album by ID
 - Populate album artist and music information
+
+### Health Check
+
+- Root test endpoint to verify the API is running
 
 ---
 
@@ -90,27 +119,31 @@ backend-vibeEx/
 
 ## Architecture
 
-The backend follows a simple layered structure:
-
 ```text
 Client
   │
   ▼
-Express Routes
+Express Application
   │
-  ├── Authentication Middleware
+  ├── GET / ──────────────────► Health Check
   │
-  ▼
-Controllers
+  ├── /api/auth ──────────────► Authentication Routes
   │
-  ├── Mongoose Models ──────► MongoDB
-  │
-  └── Storage Service ──────► ImageKit
+  └── /api/music ─────────────► Music & Album Routes
+                                  │
+                                  ├── Authentication Middleware
+                                  │
+                                  ▼
+                              Controllers
+                                  │
+                       ┌──────────┴──────────┐
+                       ▼                     ▼
+                   MongoDB                ImageKit
 ```
 
 ### Routes
 
-Define the API endpoints and connect requests to middleware/controllers.
+Define API endpoints and connect requests to middleware/controllers.
 
 ### Middleware
 
@@ -118,7 +151,7 @@ Handles authentication and role-based authorization before protected controllers
 
 ### Controllers
 
-Contain the application's business logic.
+Contain application business logic.
 
 ### Models
 
@@ -192,6 +225,8 @@ IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
 
 **Never commit your `.env` file to Git.**
 
+For the Render deployment, these values should be configured through Render's environment-variable settings rather than committed to the repository.
+
 ---
 
 # Running the Server
@@ -208,7 +243,7 @@ The development script uses Nodemon:
 npx nodemon server.js
 ```
 
-By default, the server runs on:
+By default, the local server runs on:
 
 ```text
 http://localhost:3000
@@ -222,17 +257,65 @@ The project currently does not define a dedicated production script. You can sta
 node server.js
 ```
 
+The deployed production API is available at:
+
+```text
+https://backend-vibeex.onrender.com
+```
+
 ---
 
 # API Documentation
 
-Base URL:
+The API can be accessed using either the local or deployed base URL.
+
+### Local
 
 ```text
 http://localhost:3000
 ```
 
-## Authentication
+### Production
+
+```text
+https://backend-vibeex.onrender.com
+```
+
+---
+
+# Health Check
+
+## Test API
+
+```http
+GET /
+```
+
+This endpoint is publicly accessible and can be used to confirm that the Express application is running.
+
+### Production Request
+
+```http
+GET https://backend-vibeex.onrender.com/
+```
+
+### Response
+
+```text
+MusicApp is up and running
+```
+
+The endpoint is implemented directly in `src/app.js`:
+
+```js
+app.get("/", (req, res) => {
+  res.send("MusicApp is up and running");
+});
+```
+
+---
+
+# Authentication API
 
 Authentication routes use the prefix:
 
@@ -240,9 +323,15 @@ Authentication routes use the prefix:
 /api/auth
 ```
 
+Full production prefix:
+
+```text
+https://backend-vibeex.onrender.com/api/auth
+```
+
 ---
 
-### Register User
+## Register User
 
 ```http
 POST /api/auth/register
@@ -298,7 +387,7 @@ when the username or email already exists.
 
 ---
 
-### Login
+## Login
 
 ```http
 POST /api/auth/login
@@ -336,7 +425,7 @@ The server sets the JWT in the `token` cookie.
 
 ---
 
-### Logout
+## Logout
 
 ```http
 POST /api/auth/logout
@@ -360,6 +449,12 @@ Music routes use the prefix:
 
 ```text
 /api/music
+```
+
+Production prefix:
+
+```text
+https://backend-vibeex.onrender.com/api/music
 ```
 
 Protected routes require a valid JWT stored in the `token` cookie.
@@ -783,28 +878,54 @@ For a production deployment, consider additionally configuring secure cookie opt
 
 ---
 
-# Future Improvements
+# Deployment
 
-Potential improvements for the backend include:
+The backend is deployed using **Render**.
 
-- Add request validation using a validation library
-- Add centralized error-handling middleware
-- Add pagination for music and album listings
-- Add music search
-- Add album update/delete endpoints
-- Add music delete endpoints
-- Add user profile endpoints
-- Add playlists
-- Add likes/favorites
-- Add recently played tracks
-- Add streaming-specific endpoints
-- Improve upload validation and file-size limits
-- Add production-ready cookie security settings
-- Add automated tests
-- Add API documentation with Swagger/OpenAPI
-- Add rate limiting
-- Add structured logging
-- Add a dedicated production start script
+Production URL:
+
+```text
+https://backend-vibeex.onrender.com
+```
+
+### Render Configuration
+
+The deployment should provide the required environment variables:
+
+```text
+PORT
+MONGO_URI
+JWT_SECRET
+IMAGEKIT_PRIVATE_KEY
+```
+
+The application starts from:
+
+```text
+server.js
+```
+
+and uses the Express application exported from:
+
+```text
+src/app.js
+```
+
+### Verify Deployment
+
+Open:
+
+```text
+https://backend-vibeex.onrender.com/
+```
+
+Expected response:
+
+```text
+MusicApp is up and running
+```
+
+This endpoint acts as a basic health check for the deployed API.
 
 ---
 
@@ -822,13 +943,33 @@ server.js
 2. Connects to MongoDB.
 3. Starts the Express server.
 
-The Express application itself is configured in:
+The Express application is configured in:
 
 ```text
 src/app.js
 ```
 
-Routes are separated into authentication and music modules.
+The application currently uses the following middleware:
+
+```js
+app.use(express.json());
+app.use(cookieParser());
+```
+
+Routes are mounted as:
+
+```js
+app.use("/api/auth", authRoutes);
+app.use("/api/music", musicRoutes);
+```
+
+The root test endpoint is:
+
+```js
+app.get("/", (req, res) => {
+  res.send("MusicApp is up and running");
+});
+```
 
 ---
 
